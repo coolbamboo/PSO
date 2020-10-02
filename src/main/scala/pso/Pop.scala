@@ -9,13 +9,13 @@ import scala.math.pow
  * @param stagenum 变量个数（阶段个数）
  * @param reduction 初始的X值
  * @param id 本粒子的编号。从0开始编号，方便一些数组的使用
- * @param iter 当前迭代次数
  * @param MAX_ITERS 最大迭代次数
  */
-class Pop(val stagenum : Int, override val reduction : Array[Double], override val id : Int, override val iter : Int, val MAX_ITERS : Int,
+class Pop(val stagenum : Int, override val reduction : Array[Double], override val id : Int, val MAX_ITERS : Int,
           val dsak_j : Array[DSAK_Jup], val avss:Array[AVS], val sangs:Array[SANG],
           poplbestaccu : PopLBestAccumulator, popbestaccu : PopBestAccumulator) extends Serializable with IPop with IPSO {
 
+  var iter : Int = 0 //当前迭代次数，被设置进来的
   override var LEN_PARTICLE: Int = initLEN_PARTICLE(stagenum)
   override val Jup: Array[Int] = dsak_j.map(_.Jup)
   override var Xdsa: Array[Int] = new Array(stagenum)
@@ -44,7 +44,7 @@ class Pop(val stagenum : Int, override val reduction : Array[Double], override v
     }
   }
 
-  private def computeObj_f(): Unit ={
+  private def computeObj_fNoPenal(): Unit ={
     //解码,解码的目的是为了赋值给X
     Xdsa = decode(p)
     var f = 0.0
@@ -107,10 +107,11 @@ class Pop(val stagenum : Int, override val reduction : Array[Double], override v
       P_G = penalty_factor * math.max(0, 1.0 * g_s(i-1) / gs(i-1) - 1)
     }
     P_C = penalty_factor * math.max(0, 1.0 * c_s.sum / Cmax(stagenum) - 1)
+    obj_F = obj_f - P_B - P_G - P_C - P_M
   }
 
   override def computeObj(): Unit = {
-    computeObj_f()
+    computeObj_fNoPenal()
     constraintUsed()
     computeObj_F()
   }
@@ -125,4 +126,9 @@ class Pop(val stagenum : Int, override val reduction : Array[Double], override v
     popbestaccu.add(this)
   }
 
+  override def setIter(nowIter: Int): Unit = {
+    iter = nowIter
+  }
+
+  //override def getIter(): Int = iter
 }

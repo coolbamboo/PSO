@@ -74,7 +74,7 @@ object main {
       //init an accumulator
       val globalBestPops = new PopBestAccumulator(best_result_num)
       sc.register(globalBestPops, "globalBestPops")
-      val localBestPops = new PopLBestAccumulator(local_result_num)
+      val localBestPops = new PopLBestAccumulator(pop_num, local_result_num)
       sc.register(localBestPops, "localBestPops")
       //准备：调用运行机制
       Run(sc, iter_num, pop_num, stagenum, seleAlgo, record: Record,

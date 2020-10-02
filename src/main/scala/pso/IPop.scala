@@ -4,7 +4,6 @@ trait IPop {
 
   val id: Int
   val reduction: Array[Double]
-  val iter: Int
   var LEN_PARTICLE: Int
   var Xdsa: Array[Int]
   val Jup: Array[Int]
@@ -28,4 +27,8 @@ trait IPop {
   def fly()
 
   def update_best()
+
+  def setIter(nowIter : Int)
+
+  //def getIter() : Int
 }

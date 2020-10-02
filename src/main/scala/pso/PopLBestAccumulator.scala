@@ -4,11 +4,11 @@ import org.apache.spark.util.AccumulatorV2
 
 import scala.collection.mutable.ArrayBuffer
 
-class PopLBestAccumulator(val popnum : Int, private val lenth_max : Int = 10) extends AccumulatorV2[IPop, Array[ArrayBuffer[IPop]]] {
+class PopLBestAccumulator(val popnum : Int, private val lenth_max : Int) extends AccumulatorV2[IPop, Array[ArrayBuffer[IPop]]] {
 
   private val bestPops : Array[ArrayBuffer[IPop]] = new Array(popnum)
-  bestPops.map{
-    _ => ArrayBuffer[IPop]()
+  for(i <- 0 until popnum){
+    bestPops(i) = ArrayBuffer[IPop]()
   }
   private val bound = lenth_max
 
@@ -33,8 +33,8 @@ class PopLBestAccumulator(val popnum : Int, private val lenth_max : Int = 10) ex
   }
 
   override def reset(): Unit = {
-    bestPops.map{
-      _ => ArrayBuffer[IPop]()
+    for(i <- 0 until popnum){
+      bestPops(i) = ArrayBuffer[IPop]()
     }
   }
 

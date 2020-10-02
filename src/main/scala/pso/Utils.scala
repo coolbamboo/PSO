@@ -36,15 +36,15 @@ object Utils {
   }
 
   def deal_reduction(stagenum: Int, dsak_j : Array[DSAK_Jup]) : Array[Double] = {
-    val sum : Array[Int] = Array(D(stagenum))
-    val reduction :Array[Double] = Array(stagenum)
+    val sum : Array[Int] = new Array(D(stagenum))
+    val reduction :Array[Double] = new Array(stagenum)
     dsak_j.foreach{
       case DSAK_Jup(_,d,_,_,_,j) =>
         sum(d-1) = sum(d-1) + j
     }
     dsak_j.foreach{
       case DSAK_Jup(num,d,s,a,k,j) =>
-        reduction(num-1) = 2 * B(stagenum)(d-1) / sum(d-1)
+        reduction(num-1) = 2.0 * B(stagenum)(d-1) / sum(d-1)
     }
     reduction
   }

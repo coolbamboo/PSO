@@ -32,7 +32,7 @@ class Output(stagenum: Int, iter_num: Int, pop_num: Int, task_num: Int,
 
     sb.append(record.time_runonce).append(",")
     sb.append(record.time_everyiter).append(",")
-    sb.append(s"是第${pop.iter}次迭代获取最优解,")
+    sb.append(s"第${record.gbiter}次迭代获取最优解,")
     sb.append(pop.obj_F).append(",")
     sb.append(pop.b_s.toSeq.toString().replace(",", "-")).append(":X,")
     sb.append(pop.g_s.toSeq.toString().replace(",", "-")).append(":ground,")
