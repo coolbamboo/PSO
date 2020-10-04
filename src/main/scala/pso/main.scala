@@ -70,16 +70,18 @@ object main {
       val b_avs = sc.broadcast(avs)
       val b_sang = sc.broadcast(sang)
       val b_reduction = sc.broadcast(reduction)
-      //两个累加器变量
+      //三个累加器变量
       //init an accumulator
       val globalBestPops = new PopBestAccumulator(best_result_num)
       sc.register(globalBestPops, "globalBestPops")
       val localBestPops = new PopLBestAccumulator(pop_num, local_result_num)
       sc.register(localBestPops, "localBestPops")
+      val prePops = new PopPreAccumulator(pop_num)
+      sc.register(prePops, "prePops")
       //准备：调用运行机制
       Run(sc, iter_num, pop_num, stagenum, seleAlgo, record: Record,
         b_reduction, b_dsak_j, b_avs, b_sang,
-        localBestPops, globalBestPops)
+        localBestPops, globalBestPops, prePops : PopPreAccumulator)
       //end
       val stoptime = new Date().getTime
       record.time_runonce = stoptime - starttime

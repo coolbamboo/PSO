@@ -11,11 +11,10 @@ import scala.math.pow
  * @param id 本粒子的编号。从0开始编号，方便一些数组的使用
  * @param MAX_ITERS 最大迭代次数
  */
-class Pop(val stagenum : Int, override val reduction : Array[Double], override val id : Int, val MAX_ITERS : Int,
-          val dsak_j : Array[DSAK_Jup], val avss:Array[AVS], val sangs:Array[SANG],
-          poplbestaccu : PopLBestAccumulator, popbestaccu : PopBestAccumulator) extends Serializable with IPop with IPSO {
+class Pop(val stagenum : Int, override val reduction : Array[Double], override val id : Int, override val MAX_ITERS : Int,
+          val dsak_j : Array[DSAK_Jup], val avss:Array[AVS], val sangs:Array[SANG]) extends Serializable with IPop with IPSO {
 
-  var iter : Int = 0 //当前迭代次数，被设置进来的
+  override var iter : Int = 0 //当前迭代次数，被设置进来的
   override var LEN_PARTICLE: Int = initLEN_PARTICLE(stagenum)
   override val Jup: Array[Int] = dsak_j.map(_.Jup)
   override var Xdsa: Array[Int] = new Array(stagenum)
@@ -99,14 +98,14 @@ class Pop(val stagenum : Int, override val reduction : Array[Double], override v
     var P_M:Double = 0
     val penalty_factor = MIN_PENALTY + (MAX_PENALTY - MIN_PENALTY) * iter * 1.0 / MAX_ITERS
     for(i <- 1 to D(stagenum)){
-      P_B = penalty_factor * math.max(0, 1.0 * b_s(i-1) / B(stagenum)(i-1) - 1)
-      P_M = penalty_factor * math.max(0, 1.0 * m_s(i-1) / M(stagenum)(i-1) - 1)
+      P_B += penalty_factor * math.max(0, 1.0 * b_s(i-1) / B(stagenum)(i-1) - 1)
+      P_M += penalty_factor * math.max(0, 1.0 * m_s(i-1) / M(stagenum)(i-1) - 1)
     }
+    val gs = avss.map(_.Gs)
     for(i <- 1 to S(stagenum)){
-      val gs = avss.map(_.Gs)
-      P_G = penalty_factor * math.max(0, 1.0 * g_s(i-1) / gs(i-1) - 1)
+      P_G += penalty_factor * math.max(0, 1.0 * g_s(i-1) / gs(i-1) - 1)
     }
-    P_C = penalty_factor * math.max(0, 1.0 * c_s.sum / Cmax(stagenum) - 1)
+    P_C += penalty_factor * math.max(0, 1.0 * c_s.sum / Cmax(stagenum) - 1)
     obj_F = obj_f - P_B - P_G - P_C - P_M
   }
 
@@ -116,14 +115,15 @@ class Pop(val stagenum : Int, override val reduction : Array[Double], override v
     computeObj_F()
   }
 
-  override def fly() : Unit = {
+  override def fly(poplbestaccu : PopLBestAccumulator, popbestaccu : PopBestAccumulator) : Unit = {
     fly(pop = this,poplbest = poplbestaccu.value,popbest = popbestaccu.value)
   }
 
-  override def update_best():Unit = {
+  override def update_accu(poplbestaccu : PopLBestAccumulator, popbestaccu : PopBestAccumulator, prePops : PopPreAccumulator):Unit = {
     //可以加入(先要解码，再算obj后)
     poplbestaccu.add(this)
     popbestaccu.add(this)
+    prePops.add(this)
   }
 
   override def setIter(nowIter: Int): Unit = {

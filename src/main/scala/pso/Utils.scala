@@ -8,7 +8,7 @@ import scala.collection.mutable.ArrayBuffer
 
 object Utils {
 
-  def randval(a: Int, b:Int) :Double = {
+  def randval(a: Double, b:Double) :Double = {
     val r = ThreadLocalRandom.current().nextDouble(1.0)
     val value = a + (b - a) * r
     value

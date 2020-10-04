@@ -9,50 +9,49 @@ import pso.Utils.getBestPop
 
 class Run(iter_num: Int, pop_num: Int, stagenum: Int, seleAlgo: String, b_reduction: Broadcast[Array[Double]],
           b_dsak_j: Broadcast[Array[DSAK_Jup]], b_avs: Broadcast[Array[AVS]], b_sang: Broadcast[Array[SANG]],
-          poplbestaccu: PopLBestAccumulator, popbestaccu: PopBestAccumulator) extends Serializable {
+          poplbestaccu: PopLBestAccumulator, popbestaccu: PopBestAccumulator, prePops : PopPreAccumulator) extends Serializable {
 
-  def initialize(sc: SparkContext): RDD[(Int, IPop)] = {
+  def initialize(sc: SparkContext): RDD[IPop] = {
     val task_num = sc.getConf.getInt("spark.default.parallelism", 1)
-    val popsRDD: RDD[(Int, IPop)] = sc.parallelize(0 until pop_num, task_num)
+    val popsRDD: RDD[IPop] = sc.parallelize(0 until pop_num, task_num)
       .map { i =>
         seleAlgo match {
           case "IPSO" =>
             val pop: IPop = new Pop(stagenum, b_reduction.value, i, iter_num,
-              b_dsak_j.value, b_avs.value, b_sang.value,
-              poplbestaccu, popbestaccu)
-            (i % task_num, pop)
+              b_dsak_j.value, b_avs.value, b_sang.value)
+            pop
           case "SCA" =>
             val pop: IPop = new Pop(stagenum, b_reduction.value, i, iter_num,
-              b_dsak_j.value, b_avs.value, b_sang.value,
-              poplbestaccu, popbestaccu) with SCA
-            (i % task_num, pop)
+              b_dsak_j.value, b_avs.value, b_sang.value) with SCA
+            pop
           case _ =>
             val pop: IPop = new Pop(stagenum, b_reduction.value, i, iter_num,
-              b_dsak_j.value, b_avs.value, b_sang.value,
-              poplbestaccu, popbestaccu)
-            (i % task_num, pop)
+              b_dsak_j.value, b_avs.value, b_sang.value)
+            pop
         }
       } //生成RDD
     //第一次迭代，初始化
-    val firstPopsRDD = popsRDD.mapValues(pop => {
+    val firstPopsRDD = popsRDD.mapPartitions(pops => pops.map{pop =>
       pop.initialize()
       pop.computeObj()
-      pop.update_best()
+      pop.update_accu(poplbestaccu, popbestaccu, prePops)
       pop
     })
-    firstPopsRDD.persist()
+    //firstPopsRDD.persist()
+    firstPopsRDD
   }
 
-  def deal_Iteration(popsRDD: RDD[(Int, IPop)], iternum: Int): RDD[(Int, IPop)] = {
+  def deal_Iteration(popsRDD: RDD[IPop], iternum: Int): RDD[IPop] = {
     //除了第一次，不需要再次初始化
-    val otherIterPopsRDD = popsRDD.mapValues(pop => {
+    val otherIterPopsRDD = popsRDD.mapPartitions(pops => pops.map(pop => prePops.value(pop.id).head).map{ pop =>
       pop.setIter(iternum)
-      pop.fly()
+      pop.fly(poplbestaccu, popbestaccu)
       pop.computeObj()
-      pop.update_best()
+      pop.update_accu(poplbestaccu, popbestaccu, prePops)
       pop
     })
-    otherIterPopsRDD.persist()
+    //otherIterPopsRDD.persist()
+    otherIterPopsRDD
   }
 }
 
@@ -60,24 +59,20 @@ object Run {
   def apply(sc: SparkContext, iter_num: Int, pop_num: Int, stagenum: Int, seleAlgo: String, record: Record,
             b_reduction: Broadcast[Array[Double]],
             b_dsak_j: Broadcast[Array[DSAK_Jup]], b_avs: Broadcast[Array[AVS]], b_sang: Broadcast[Array[SANG]],
-            poplbestaccu: PopLBestAccumulator, popbestaccu: PopBestAccumulator): Unit = {
-    val run = new Run(iter_num, pop_num, stagenum, seleAlgo, b_reduction, b_dsak_j, b_avs, b_sang, poplbestaccu, popbestaccu)
-    val popRDD = run.initialize(sc)
+            poplbestaccu: PopLBestAccumulator, popbestaccu: PopBestAccumulator, prePops : PopPreAccumulator): Unit = {
+    val run = new Run(iter_num, pop_num, stagenum, seleAlgo, b_reduction, b_dsak_j, b_avs, b_sang, poplbestaccu, popbestaccu,
+    prePops)
+    val popsRDD = run.initialize(sc)
     for (iternum <- 1 to iter_num) {
       val starttime = new Date().getTime
-      val iterPopRDD = run.deal_Iteration(popRDD, iternum)
+      val iterPopRDD = run.deal_Iteration(popsRDD, iternum)
       //求最大值
-      val bestLocalPopRDD = iterPopRDD.foldByKey(new Pop(stagenum, b_reduction.value, 40, iter_num,
-        b_dsak_j.value, b_avs.value, b_sang.value,
-        poplbestaccu, popbestaccu))((a, b) => {
-        if (a.obj_F >= b.obj_F)
-          a
-        else
-          b
-      })
+      //val bestLocalPopRDD = iterPopRDD.sortBy(pop => pop.obj_F, ascending = false) //用这个sortBy transform有bug
+      val bestLocalPop = iterPopRDD.collect().maxBy(pop => pop.obj_F) //获取数据后比较大小
       //action
-      val best_local_pop = bestLocalPopRDD.collect()(0)._2
-      if (best_local_pop.obj_F >= getBestPop(popbestaccu.value).obj_F)
+      //val best_local_pop = bestLocalPopRDD.take(1)(0)
+      //if (best_local_pop.obj_F >= getBestPop(popbestaccu.value).obj_F)
+      if(bestLocalPop.obj_F >= getBestPop(popbestaccu.value).obj_F)
         record.gbiter = iternum
       val stoptime = new Date().getTime
       val time_interval = stoptime - starttime

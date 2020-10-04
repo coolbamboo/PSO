@@ -29,7 +29,6 @@ trait IPSO {
           pop.p(i - 1) = 0
           pop.v(i - 1) = 0
         }
-
         if (pop.p(i - 1) > pop.Jup(i - 1)) {
           pop.p(i - 1) = pop.Jup(i - 1)
           pop.v(i - 1) = 0

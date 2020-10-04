@@ -3,6 +3,8 @@ package pso
 trait IPop {
 
   val id: Int
+  var iter: Int
+  val MAX_ITERS : Int
   val reduction: Array[Double]
   var LEN_PARTICLE: Int
   var Xdsa: Array[Int]
@@ -24,11 +26,10 @@ trait IPop {
 
   def decode(p: Array[Int]): Array[Int]
 
-  def fly()
-
-  def update_best()
-
-  def setIter(nowIter : Int)
+  def setIter(nowIter: Int)
 
   //def getIter() : Int
+  def fly(poplbestaccu: PopLBestAccumulator, popbestaccu: PopBestAccumulator): Unit
+
+  def update_accu(poplbestaccu: PopLBestAccumulator, popbestaccu: PopBestAccumulator, prePops : PopPreAccumulator): Unit
 }

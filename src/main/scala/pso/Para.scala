@@ -26,5 +26,9 @@ object Para {
   val Vmax = 6.0 //粒子速度的范围
   val c0 = 0.9
 
+  //SCA用的变量
+  val a_const:Int = 5
+  val r3max:Int = 10
+  val M_PI = 3.14159265358979323846
 
 }
