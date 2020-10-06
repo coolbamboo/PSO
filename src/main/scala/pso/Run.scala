@@ -24,6 +24,10 @@ class Run(iter_num: Int, pop_num: Int, stagenum: Int, seleAlgo: String, b_reduct
             val pop: IPop = new Pop(stagenum, b_reduction.value, i, iter_num,
               b_dsak_j.value, b_avs.value, b_sang.value) with SCA
             pop
+          case "BPSO" =>
+            val pop: IPop = new Pop(stagenum, b_reduction.value, i, iter_num,
+              b_dsak_j.value, b_avs.value, b_sang.value) with BPSO
+            pop
           case _ =>
             val pop: IPop = new Pop(stagenum, b_reduction.value, i, iter_num,
               b_dsak_j.value, b_avs.value, b_sang.value)
@@ -45,7 +49,7 @@ class Run(iter_num: Int, pop_num: Int, stagenum: Int, seleAlgo: String, b_reduct
     //除了第一次，不需要再次初始化
     val otherIterPopsRDD = popsRDD.mapPartitions(pops => pops.map(pop => prePops.value(pop.id).head).map{ pop =>
       pop.setIter(iternum)
-      pop.fly(poplbestaccu, popbestaccu)
+      pop.fly(poplbestaccu.value, popbestaccu.value)
       pop.computeObj()
       pop.update_accu(poplbestaccu, popbestaccu, prePops)
       pop

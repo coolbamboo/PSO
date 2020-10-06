@@ -2,6 +2,8 @@ package pso
 
 import pso.Para._
 import pso.Utils.{randoff, randval}
+
+import scala.collection.mutable.ArrayBuffer
 import scala.math.pow
 
 /**
@@ -115,8 +117,8 @@ class Pop(val stagenum : Int, override val reduction : Array[Double], override v
     computeObj_F()
   }
 
-  override def fly(poplbestaccu : PopLBestAccumulator, popbestaccu : PopBestAccumulator) : Unit = {
-    fly(pop = this,poplbest = poplbestaccu.value,popbest = popbestaccu.value)
+  override def fly(poplbest : Array[ArrayBuffer[IPop]], popbest : ArrayBuffer[IPop]) : Unit = {
+    fly(pop = this, poplbest, popbest)
   }
 
   override def update_accu(poplbestaccu : PopLBestAccumulator, popbestaccu : PopBestAccumulator, prePops : PopPreAccumulator):Unit = {

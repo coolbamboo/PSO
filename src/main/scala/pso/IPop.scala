@@ -1,5 +1,7 @@
 package pso
 
+import scala.collection.mutable.ArrayBuffer
+
 trait IPop {
 
   val id: Int
@@ -29,7 +31,7 @@ trait IPop {
   def setIter(nowIter: Int)
 
   //def getIter() : Int
-  def fly(poplbestaccu: PopLBestAccumulator, popbestaccu: PopBestAccumulator): Unit
+  def fly(poplbest: Array[ArrayBuffer[IPop]], popbest: ArrayBuffer[IPop]): Unit
 
   def update_accu(poplbestaccu: PopLBestAccumulator, popbestaccu: PopBestAccumulator, prePops : PopPreAccumulator): Unit
 }
