@@ -34,4 +34,6 @@ trait IPop {
   def fly(poplbest: Array[ArrayBuffer[IPop]], popbest: ArrayBuffer[IPop]): Unit
 
   def update_accu(poplbestaccu: PopLBestAccumulator, popbestaccu: PopBestAccumulator, prePops : PopPreAccumulator): Unit
+
+  def update_basic(poplbest : PopLBest, popbest : PopBest, prePops : PopPre) : Unit
 }

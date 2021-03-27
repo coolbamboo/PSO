@@ -1,12 +1,13 @@
 package pso
 
-import java.util.Date
-
+import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkConf, SparkContext}
 import pso.Para.{best_result_num, local_result_num}
 import pso.Utils.{deal_Jup, deal_reduction}
 
-object main {
+import java.util.Date
+
+object mainbasic {
 
   /**
    * imported parameter:
@@ -35,7 +36,6 @@ object main {
       conf.set("spark.default.parallelism", task_num.toString)
     else
       conf.set("spark.default.parallelism", "1")
-
     if ("local".equals(runStyle.trim)) {
       if (task_num > 0) {
         conf.setMaster(s"local[$task_num]") //local run
@@ -43,50 +43,44 @@ object main {
         conf.setMaster("local[1]") //local run
       }
     }
-    for (run <- 1 to runmax_num) {
-      println(s"第${run}次运行：")
-      val sc = new SparkContext(conf)
-      //ready to record
-      val record = new Record()
-      record.now_run = run
-      //read data
-      val (rawAVS, rawDSAK, rawSANG) = new ReadData(dataPath.trim).apply(sc, stagenum)
-      val avses = rawAVS.collect()
-      val dsaks = rawDSAK.collect()
-      val sang = rawSANG.collect()
 
+    val sc = new SparkContext(conf)
+    //read data
+    val (rawAVS, rawDSAK, rawSANG) = new ReadData(dataPath.trim).apply(sc, stagenum)
+    val avses = rawAVS.collect()
+    val dsaks = rawDSAK.collect()
+    val sang = rawSANG.collect()
+    //ready to record
+    val record = new Record()
+    val begintime = new Date().getTime
+    val runRDD: RDD[Vector[Output]] = sc.parallelize(1 to runmax_num, task_num).map { i =>
+      println(s"第${i}次运行：")
+      record.now_run = i
       //begin
       val starttime = new Date().getTime
       //初始化：1、求j的上限
       val (dsak_j, avs) = deal_Jup(stagenum, avses, dsaks)
       //初始化：2、求解的最初值(根据导数)
       val reduction = deal_reduction(stagenum, dsak_j)
-
-      //将四个数据集广播
-      val b_dsak_j = sc.broadcast(dsak_j)
-      val b_avs = sc.broadcast(avs)
-      val b_sang = sc.broadcast(sang)
-      val b_reduction = sc.broadcast(reduction)
-      //三个累加器变量
-      //init an accumulator
-      val globalBestPops = new PopBestAccumulator(best_result_num)
-      sc.register(globalBestPops, "globalBestPops")
-      val localBestPops = new PopLBestAccumulator(pop_num, local_result_num)
-      sc.register(localBestPops, "localBestPops")
-      val prePops = new PopPreAccumulator(pop_num)
-      sc.register(prePops, "prePops")
+      val globalBestPops = new PopBest(best_result_num)
+      val localBestPops = new PopLBest(pop_num, local_result_num)
+      val prePops = new PopPre(pop_num)
       //准备：调用运行机制
-      Run(sc, iter_num, pop_num, stagenum, seleAlgo, record: Record,
-        b_reduction, b_dsak_j, b_avs, b_sang,
-        localBestPops, globalBestPops, prePops : PopPreAccumulator)
+      RunForBasic(iter_num, pop_num, stagenum, seleAlgo, record,
+        reduction, dsak_j, avs, sang,
+        localBestPops, globalBestPops, prePops)
       //end
       val stoptime = new Date().getTime
       record.time_runonce = stoptime - starttime
       //output
-      var outputs: Vector[Output] = null
-      outputs = Output(stagenum, iter_num, pop_num, task_num,
+      val outputs: Vector[Output] = Output(stagenum, iter_num, pop_num, task_num,
         dataPath, runStyle, seleAlgo, record, globalBestPops.value).sortWith(_.pop.obj_F > _.pop.obj_F)
-
+      outputs
+    }
+    val outputs = runRDD.collect()
+    val endtime = new Date().getTime
+    println(s"run time:${endtime-begintime}毫秒")
+    outputs.foreach(outputs => {
       runStyle.trim match {
         case "local" =>
           Utils.saveToLocal(outputs)
@@ -96,8 +90,8 @@ object main {
           val outputfile = "/home/spark/Downloads/results.csv"
           Utils.saveToLocal(outputs, outputfile)
       }
+    })
 
-      sc.stop()
-    }
+    sc.stop()
   }
 }

@@ -128,6 +128,13 @@ class Pop(val stagenum : Int, override val reduction : Array[Double], override v
     prePops.add(this)
   }
 
+  override def update_basic(poplbest : PopLBest, popbest : PopBest, prePops : PopPre):Unit = {
+    //可以加入(先要解码，再算obj后)
+    poplbest.add(this)
+    popbest.add(this)
+    prePops.add(this)
+  }
+
   override def setIter(nowIter: Int): Unit = {
     iter = nowIter
   }

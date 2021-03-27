@@ -77,13 +77,13 @@ object Utils {
     })
   }
 
-  def saveToLocal(outputs : Vector[Output]): Unit ={
+  def saveToLocal(outputs : Vector[Output], outputFile : String = "./results.csv"): Unit ={
     import java.io.{BufferedWriter, FileOutputStream, IOException, OutputStreamWriter}
     var out : BufferedWriter = null
     try {
       out = new BufferedWriter(
         new OutputStreamWriter(
-          new FileOutputStream("./results.csv", true)))
+          new FileOutputStream(outputFile, true)))
       outputs.foreach(output => {
         out.write(output.toString() + "\r\n")
       })
