@@ -64,8 +64,8 @@ object RunForBasic {
     val popsInit = run.init()//初始化
     for (iternum <- 1 to iter_num) {
       val starttime = new Date().getTime
-      val iterPop = run.deal_Iteration(popsInit, iternum)
-      val bestLocalPop = iterPop.max(new Ordering[IPop](){
+      val iterPops = run.deal_Iteration(popsInit, iternum)
+      val bestLocalPop = iterPops.max(new Ordering[IPop](){
         override def compare(x: IPop, y: IPop): Int = {
           if(x.obj_F < y.obj_F) -1
           else if(x.obj_F > y.obj_F) 1

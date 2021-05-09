@@ -76,7 +76,7 @@ object main {
       val prePops = new PopPreAccumulator(pop_num)
       sc.register(prePops, "prePops")
       //准备：调用运行机制
-      Run(sc, iter_num, pop_num, stagenum, seleAlgo, record: Record,
+      Run1(sc, iter_num, pop_num, stagenum, seleAlgo, record: Record,
         b_reduction, b_dsak_j, b_avs, b_sang,
         localBestPops, globalBestPops, prePops : PopPreAccumulator)
       //end
